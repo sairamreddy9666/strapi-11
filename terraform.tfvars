@@ -1,0 +1,7 @@
+db_host     = "sairam-postgres-strapi-db.czkqowwyuju3.ap-south-1.rds.amazonaws.com"
+db_port     = "5432"
+db_name     = "postgres"
+db_user     = "postgres"
+db_password = "Strapi123!"
+ecr_repository_url = "242201300764.dkr.ecr.ap-south-1.amazonaws.com/sairam-strapi-ecr"
+image_tag       = "latest"
