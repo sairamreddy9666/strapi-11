@@ -1,4 +1,4 @@
-name: CI/CD Strapi Deploy
+name: Build & Push Docker Image
 
 on:
   workflow_dispatch:
@@ -8,7 +8,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout repo
+    - name: Checkout repository
       uses: actions/checkout@v3
 
     - name: Configure AWS credentials
@@ -24,18 +24,18 @@ jobs:
 
     - name: Build Docker image
       run: |
-        IMAGE_TAG=latest
-        ECR_URI=${{ steps.login-ecr.outputs.registry }}/strapi-app:$IMAGE_TAG
-        docker build -t $ECR_URI .
-        docker push $ECR_URI
-        echo "IMAGE_URI=$ECR_URI" >> $GITHUB_ENV
+        COMMIT_SHA=$(echo $GITHUB_SHA | cut -c1-7)
+        docker build -t strapi-app:latest .
 
-    - name: Terraform Init
-      working-directory: terraform
-      run: terraform init
-
-    - name: Terraform Apply
-      working-directory: terraform
+    - name: Tag Docker image
       run: |
-        terraform apply -auto-approve -var="image_url=$IMAGE_URI"
+        docker tag strapi-app:latest 242201300764.dkr.ecr.ap-south-1.amazonaws.com/sairam-strapi-ecr:latest
+        docker tag strapi-app:latest 242201300764.dkr.ecr.ap-south-1.amazonaws.com/sairam-strapi-ecr:$COMMIT_SHA
 
+    - name: Push Docker image to ECR
+      run: |
+        docker push 242201300764.dkr.ecr.ap-south-1.amazonaws.com/sairam-strapi-ecr:latest
+        docker push 242201300764.dkr.ecr.ap-south-1.amazonaws.com/sairam-strapi-ecr:$COMMIT_SHA
+
+    - name: Image pushed successfully
+      run: echo "✅ Docker image pushed to ECR with tag 'latest'"
