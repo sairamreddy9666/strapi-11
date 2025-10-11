@@ -23,9 +23,10 @@ jobs:
       uses: aws-actions/amazon-ecr-login@v1
 
     - name: Build Docker image
-      run: |
-        COMMIT_SHA=$(echo $GITHUB_SHA | cut -c1-7)
-        docker build -t strapi-app:latest .
+      run: docker build -t strapi-app:latest .
+
+    - name: Set commit SHA
+      run: echo "COMMIT_SHA=${GITHUB_SHA}" >> $GITHUB_ENV
 
     - name: Tag Docker image
       run: |
