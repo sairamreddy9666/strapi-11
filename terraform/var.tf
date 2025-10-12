@@ -8,12 +8,6 @@ variable "image_uri" {
   type        = string
 }
 
-variable "db_password" {
-  description = "Database password for RDS PostgreSQL"
-  type        = string
-  sensitive   = true
-}
-
 variable "ecr_repository_url" {
   description = "ECR repository URL"
   type        = string
