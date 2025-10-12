@@ -21,7 +21,10 @@ jobs:
     - name: Create ECR repository if it doesn't exist
       run: |
         if ! aws ecr describe-repositories --repository-names sairam-strapi-ecr --region ap-south-1 > /dev/null 2>&1; then
+          echo "Repository not found — creating sairam-strapi-ecr..."
           aws ecr create-repository --repository-name sairam-strapi-ecr --region ap-south-1
+        else
+          echo "Repository already exists."
         fi
 
     - name: Login to Amazon ECR
@@ -44,5 +47,30 @@ jobs:
         docker push 242201300764.dkr.ecr.ap-south-1.amazonaws.com/sairam-strapi-ecr:latest
         docker push 242201300764.dkr.ecr.ap-south-1.amazonaws.com/sairam-strapi-ecr:$COMMIT_SHA
 
-    - name: Image pushed successfully
-      run: echo "✅ Docker image pushed to ECR with tag 'latest'"
+    - name: Delete old images (keep only latest)
+      run: |
+        REPO_NAME="sairam-strapi-ecr"
+        REGION="ap-south-1"
+        ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
+        REPO_URI="$ACCOUNT_ID.dkr.ecr.$REGION.amazonaws.com/$REPO_NAME"
+
+        echo "Fetching all images except the latest..."
+        OLD_IMAGES=$(aws ecr list-images \
+          --repository-name $REPO_NAME \
+          --region $REGION \
+          --query 'imageIds[?imageTag!=`latest`]' \
+          --output json)
+
+        if [ "$OLD_IMAGES" != "[]" ]; then
+          echo "Deleting old images..."
+          aws ecr batch-delete-image \
+            --repository-name $REPO_NAME \
+            --region $REGION \
+            --image-ids "$OLD_IMAGES"
+          echo "✅ Old images deleted successfully!"
+        else
+          echo "🆗 No old images found to delete."
+        fi
+
+    - name: Success message
+      run: echo "✅ Image pushed successfully and old images cleaned up!"
