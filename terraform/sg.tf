@@ -6,7 +6,7 @@ resource "aws_security_group" "SG" {
   ingress {
     from_port   = 1337
     to_port     = 1337
-    protocol    = "-1"
+    protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
 
