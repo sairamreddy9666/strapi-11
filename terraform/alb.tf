@@ -2,8 +2,8 @@ resource "aws_lb" "LB" {
   name               = "LB"
   internal           = false
   load_balancer_type = "application"
-  security_groups    = [aws_security_group.SG.id]
-  subnets            = [aws_subnet.subnet1.id, aws_subnet.subnet2.id]
+  security_groups    = [aws_security_group.LB_SG.id]
+  subnets            = [subnet-01b9145f78073bb17, subnet-03d2b77588f67313d, subnet-0e0fe86cf5f4b935b]
 
   tags = {
     Name = "sairam-LB"
