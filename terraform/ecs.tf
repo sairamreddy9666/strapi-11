@@ -1,7 +1,7 @@
 resource "aws_ecs_cluster" "ECS" {
-  name = "sairam-ECS"
+  name = "sairam-ECS-BlueGreen"
 
   tags = {
-    Name = "sairam-ECS"
+    Name = "sairam-ECS-BlueGreen"
   }
 }
