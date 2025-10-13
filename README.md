@@ -1,222 +1,214 @@
-🧱 Strapi on AWS ECS Fargate with Terraform & GitHub Actions
+# 🚀 Strapi Deployment on AWS ECS Fargate (Task #8)
 
-This project automates the deployment of a Strapi application on AWS ECS Fargate using Terraform for infrastructure provisioning and GitHub Actions for CI/CD automation.
+This project automates the deployment of a **Strapi application** on **AWS ECS Fargate** using **Terraform** for infrastructure provisioning, **GitHub Actions** for CI/CD automation, and **AWS CloudWatch** for logging and performance monitoring.
 
-Additionally, it integrates Amazon CloudWatch for monitoring and logging.
+---
+
+## 📋 Project Overview
+
+| Component | Description |
+|------------|-------------|
+| **Application** | Strapi (Node.js Headless CMS) |
+| **Container Platform** | AWS ECS (Fargate Launch Type) |
+| **Infrastructure as Code** | Terraform |
+| **CI/CD Pipeline** | GitHub Actions |
+| **Container Registry** | Amazon ECR |
+| **Monitoring & Logging** | AWS CloudWatch |
+| **Database** | Amazon RDS (PostgreSQL) |
+| **Load Balancer** | Application Load Balancer (ALB) |
+| **Network** | Existing VPC and Public Subnets |
+
+---
+
+## 🧱 Architecture Diagram
+Developer → GitHub → GitHub Actions CI/CD → AWS ECR → ECS Fargate → ALB → CloudWatch Logs/Metrics
+
+---
+
+## ⚙️ Features Implemented
+
+✅ **Infrastructure Automation with Terraform**
+- ECS Cluster, Task Definition, and Service
+- ALB with Listener and Target Group
+- IAM Roles and Security Groups
+- CloudWatch Log Group (`/ecs/strapi`)
+- ECS Task Log Driver integrated with CloudWatch
+
+✅ **CI/CD with GitHub Actions**
+- Automatically builds Docker image from `Dockerfile`
+- Pushes the image to AWS ECR
+- Runs Terraform `plan` and `apply` for automated deployment
+- Supports `destroy.yml` workflow for cleanup
+
+✅ **CloudWatch Monitoring**
+- Logs collected via AWS Logs driver (`/ecs/strapi`)
+- Metrics enabled for:
+  - CPU Utilization
+  - Memory Utilization
+  - Network In / Out
+  - Running Task Count
+- Optional alarms and dashboards can be created for:
+  - High CPU or memory usage
+  - Unhealthy task count
+  - Latency tracking (if enabled)
 
 
 
-🚀 Project Overview
-
-Infrastructure managed via Terraform:
-
-ECS Cluster and Fargate Service
-
-Application Load Balancer (ALB)
-
-Target Groups and Listeners
-
-Security Groups
-
-VPC and Subnets (optional / or using existing VPC)
-
-IAM Roles and Policies
-
-CloudWatch Log Groups (for ECS logging)
-
-Optional: CloudWatch Dashboard and Alarms
-
-
-
-Automation via GitHub Actions:
-
-build-push.yml – Builds and pushes Strapi Docker image to Amazon ECR
-
-deploy.yml – Deploys latest image to ECS using Terraform
-
-destroy.yml – Destroys AWS infrastructure via Terraform
-
-
-
-🧩 Folder Structure
-
-📦 strapi-7
-
+## 📂 Repository Structure
+.
 ├── .github/workflows/
 
-│   ├── build-push.yml         # CI: Build and push image to ECR
+│ ├── build-push.yml # Build & Push to ECR
 
-│   ├── deploy.yml             # CD: Deploy infrastructure via Terraform
+│ ├── deploy.yml # Terraform Apply
 
-│   └── destroy.yml            # Destroy environment
-│
+│ └── destroy.yml # Terraform Destroy
+
 ├── terraform/
 
-│   ├── alb.tf                 # Load Balancer configuration
+│ ├── alb.tf
 
-│   ├── backend.tf             # Terraform backend (S3/DynamoDB)
+│ ├── backend.tf
 
-│   ├── ecs.tf                 # ECS Cluster setup
+│ ├── ecs-service.tf
 
-│   ├── ecs-td.tf              # Task Definition (Strapi container)
+│ ├── ecs-td.tf
 
-│   ├── ecs-service.tf         # ECS Service with Load Balancer
+│ ├── ecs.tf
 
-│   ├── sg.tf                  # Security Groups
+│ ├── iam.tf
 
-│   ├── iam.tf                 # IAM Roles & Policies
+│ ├── outputs.tf
 
-│   ├── tg.tf                  # Target Group
+│ ├── provider.tf
 
-│   ├── vpc.tf                 # VPC & Subnets (if managed here)
+│ ├── sg.tf
 
-│   ├── provider.tf            # AWS provider setup
+│ ├── terraform.tfvars
 
-│   ├── outputs.tf             # Output ALB DNS, ECS details, etc.
+│ ├── tg.tf
 
-│   ├── terraform.tfvars       # Variable values
+│ ├── var.tf
 
-│   └── var.tf                 # Variable definitions
-│
+│ └── vpc.tf
+
 ├── config/
 
-│   ├── admin.js
+│ ├── admin.js
 
-│   ├── database.js
+│ ├── database.js
 
-│   └── server.js              # Strapi configuration
-│
-├── Dockerfile                 # Builds Strapi image
+│ └── server.js
 
-├── .env                       # Environment variables
+├── Dockerfile
 
-├── rds-combined-ca-bundle.pem # SSL certificate for RDS (if used)
+├── .env
 
-├── README.md                  # You are here
+├── rds-combined-ca-bundle.pem
 
-└── package.json (if included)
+└── README.md
 
+---
 
+## 🧩 Terraform Resources Created
 
-🛠️ Prerequisites
+| Resource Type | Name | Description |
+|----------------|------|-------------|
+| `aws_ecs_cluster` | sairam-ECS | ECS Cluster for Strapi |
+| `aws_ecs_task_definition` | strapi-task | Defines container specs & logs |
+| `aws_ecs_service` | sairam-ecs-service | Runs Fargate tasks |
+| `aws_lb` | sairam-LB | Application Load Balancer |
+| `aws_lb_target_group` | TG | ALB Target Group for ECS Tasks |
+| `aws_alb_listener` | Listener | Routes HTTP traffic to ECS |
+| `aws_cloudwatch_log_group` | /ecs/strapi | Captures Strapi logs |
+| `aws_security_group` | SG, LB_SG | For ECS and ALB networking |
+| `aws_iam_role` | ecs_task_exec_role | ECS Task Execution Role |
 
-AWS Account with programmatic access (Access Key & Secret)
+---
 
-Terraform ≥ 1.5.x
+## 🧠 CloudWatch Observability
 
-Docker installed locally
+### 🔹 Logs
+- Navigate to **AWS Console → CloudWatch → Logs → Log Groups → /ecs/strapi**
+- Check live application logs from running containers.
 
-GitHub Secrets configured:
+### 🔹 Metrics
+- **AWS Console → CloudWatch → Metrics → ECS → ClusterName**
+- View metrics like:
+  - CPUUtilization
+  - MemoryUtilization
+  - NetworkIn
+  - NetworkOut
+  - RunningTaskCount
 
-AWS_ACCESS_KEY_ID
+### 🔹 Optional Dashboards / Alarms
+You can define dashboards or alarms for:
+- CPU > 80% (alarm)
+- Memory > 75%
+- Failed task count > 0
 
-AWS_SECRET_ACCESS_KEY
-
-AWS_REGION
-
-ECR_REPOSITORY
-
-TF_STATE_BUCKET
-
-TF_STATE_LOCK_TABLE
-
-
-
-🧪 GitHub Actions Workflows
-
-1️⃣ Build & Push Image (.github/workflows/build-push.yml)
-
-Builds and pushes Strapi Docker image to AWS ECR.
-
-on:
-
-  push:
-  
-    branches: [ main ]
-
-
-Outputs:
-
-Docker image pushed to ECR
-
-Commit SHA tagged image
-
-
-2️⃣ Deploy Infrastructure (.github/workflows/deploy.yml)
-
-Applies Terraform plan to deploy ECS service and ALB.
-
-
-3️⃣ Destroy Infrastructure (.github/workflows/destroy.yml)
-
-Tears down ECS, ALB, IAM roles, and associated AWS resources.
-
+Example Terraform snippet for alarm (optional):
+```hcl
+resource "aws_cloudwatch_metric_alarm" "high_cpu" {
+  alarm_name          = "HighCPUUtilization"
+  comparison_operator = "GreaterThanThreshold"
+  evaluation_periods  = 2
+  metric_name         = "CPUUtilization"
+  namespace           = "AWS/ECS"
+  period              = 60
+  statistic           = "Average"
+  threshold           = 80
+  alarm_description   = "Triggered when CPU > 80%"
+  dimensions = {
+    ClusterName = aws_ecs_cluster.ECS.name
+  }
+}
 
 
-🪵 CloudWatch Integration
-
-Log Group: /ecs/strapi
-
-Logs from ECS task container are streamed via awslogs driver
-
-Metrics Monitored:
-
-CPU Utilization
-
-Memory Utilization
-
-Running Task Count
-
-Network In/Out
-
-Optionally, you can add:
-
-CloudWatch Alarms (e.g., high CPU usage > 80%)
-
-Dashboards for ECS metrics visualization
+---
 
 
+🚀 Deployment Steps
 
-🧰 Useful Terraform Commands
+1️⃣ Clone the Repository
+git clone https://github.com/sairamreddy9666/strapi-8.git
+cd strapi-8/terraform
 
+2️⃣ Configure AWS Credentials
+aws configure
+
+3️⃣ Initialize Terraform
 terraform init
 
+4️⃣ Plan and Apply
 terraform plan -out=tfplan
-
 terraform apply -auto-approve tfplan
 
-terraform destroy -auto-approve
+5️⃣ Access Application
 
+Once deployed, copy the Load Balancer DNS Name from Terraform output or AWS Console and open it in your browser:
 
+http://<ALB-DNS-Name>:1337/admin
 
-🌐 Access Application
+🧹 Destroy Infrastructure
 
-After deployment:
-
-Visit ALB DNS name (output from Terraform)
-
-Example:
-
-http://<alb-dns-name>
-
-
-
-🧹 Cleanup
-
-To delete all resources and avoid unnecessary AWS charges:
+When done testing, destroy all resources:
 
 terraform destroy -auto-approve
 
-Or trigger the GitHub Action workflow destroy.yml.
+📈 Future Enhancements
 
+Add CloudWatch Alarms and SNS Notifications
 
+Add HTTPS (ACM Certificate + ALB HTTPS Listener)
 
-👨‍💻 Author
+Integrate Route53 for custom domain
+
+Add Prometheus/Grafana for deep observability
+
+👤 Author
 
 Sai Ram Reddy Badari
-
-Cloud Engineer | DevOps Enthusiast
-
+AWS | DevOps | Docker | Terraform | Strapi
 📍 Hyderabad, India
-
-🔗 GitHub: @sairamreddy9666
+🔗 GitHub: sairamreddy9666
