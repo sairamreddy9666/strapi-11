@@ -1,6 +1,5 @@
 resource "aws_ecs_service" "ECS-Service" {
   name                               = "sairam-ecs-service"
-  launch_type                        = "FARGATE"
   platform_version                   = "LATEST"
   cluster                            = aws_ecs_cluster.ECS.id
   task_definition                    = aws_ecs_task_definition.TD.arn
@@ -10,6 +9,10 @@ resource "aws_ecs_service" "ECS-Service" {
   deployment_maximum_percent         = 200
   depends_on                         = [aws_alb_listener.Listener]
 
+  capacity_provider_strategy {
+  capacity_provider = "FARGATE_SPOT"
+  weight            = 1
+  }
 
   load_balancer {
     target_group_arn = aws_lb_target_group.TG.arn
