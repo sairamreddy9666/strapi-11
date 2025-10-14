@@ -15,6 +15,11 @@ resource "aws_codedeploy_deployment_group" "ECS_DG" {
     service_name = aws_ecs_service.ECS-Service.name
   }
 
+  deployment_style {
+    deployment_type   = "BLUE_GREEN"
+    deployment_option = "WITH_TRAFFIC_CONTROL"
+  }
+
   load_balancer_info {
     target_group_pair_info {
 
