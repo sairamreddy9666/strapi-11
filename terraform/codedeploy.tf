@@ -15,6 +15,20 @@ resource "aws_codedeploy_deployment_group" "ECS_DG" {
     service_name = aws_ecs_service.ECS-Service.name
   }
 
+  load_balancer_info {
+    target_group_pair_info {
+      target_groups {
+        name = aws_lb_target_group.Blue_TG.name
+      }
+      target_groups {
+        name = aws_lb_target_group.Green_TG.name
+      }
+      prod_traffic_route {
+        listener_arn = aws_alb_listener.Listener.arn
+      }
+    }
+  }
+
   blue_green_deployment_config {
     terminate_blue_instances_on_deployment_success {
       action = "TERMINATE"
