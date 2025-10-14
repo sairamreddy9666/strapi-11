@@ -38,18 +38,18 @@ resource "aws_codedeploy_deployment_group" "ECS_DG" {
         listener_arns = [aws_alb_listener.Listener.arn]
       }
     }
-  } 
+  }
 
   blue_green_deployment_config {
     terminate_blue_instances_on_deployment_success {
-      action = "TERMINATE"
+      action                         = "TERMINATE"
       termination_wait_time_in_minutes = 5
     }
 
     deployment_ready_option {
       action_on_timeout = "CONTINUE_DEPLOYMENT"
     }
-
+  }
 
   auto_rollback_configuration {
     enabled = true
