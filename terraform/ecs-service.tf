@@ -1,6 +1,6 @@
 resource "aws_ecs_service" "ECS-Service" {
   name                               = "sairam-ecs-service"
-  launch_type     = "FARGATE"
+  launch_type                        = "FARGATE"
   platform_version                   = "LATEST"
   cluster                            = aws_ecs_cluster.ECS.id
   task_definition                    = aws_ecs_task_definition.TD.arn
@@ -25,5 +25,9 @@ resource "aws_ecs_service" "ECS-Service" {
     assign_public_ip = true
     security_groups  = [aws_security_group.SG.id]
     subnets          = ["subnet-01b9145f78073bb17", "subnet-03d2b77588f67313d", "subnet-0e0fe86cf5f4b935b"]
+  }
+
+  lifecycle {
+    ignore_changes = [task_definition, platform_version]
   }
 }
