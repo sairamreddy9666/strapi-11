@@ -17,17 +17,23 @@ resource "aws_codedeploy_deployment_group" "ECS_DG" {
 
   load_balancer_info {
     target_group_pair_info {
-      target_groups {
+
+      # Blue Target Group
+      target_group {
         name = aws_lb_target_group.Blue_TG.name
       }
-      target_groups {
+
+      # Green Target Group
+      target_group {
         name = aws_lb_target_group.Green_TG.name
       }
+
+      # Listener ARNs (must be a list)
       prod_traffic_route {
-        listener_arn = aws_alb_listener.Listener.arn
+        listener_arns = [aws_alb_listener.Listener.arn]
       }
     }
-  }
+  } 
 
   blue_green_deployment_config {
     terminate_blue_instances_on_deployment_success {
