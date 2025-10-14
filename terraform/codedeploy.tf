@@ -34,4 +34,9 @@ resource "aws_codedeploy_deployment_group" "ECS_DG" {
     enabled = true
     events  = ["DEPLOYMENT_FAILURE"]
   }
+
+  depends_on = [
+    aws_iam_role.CodeDeployRole,
+    aws_iam_role_policy_attachment.CodeDeployRolePolicy
+  ]
 }
