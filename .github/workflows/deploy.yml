@@ -45,11 +45,3 @@ jobs:
       - name: Terraform Apply
         working-directory: ./terraform
         run: terraform apply -auto-approve tfplan
-
-      - name: Trigger CodeDeploy Deployment
-        run: |
-          aws deploy create-deployment \
-            --application-name Strapi-ECS-App \
-            --deployment-group-name Strapi-ECS-DG \
-            --deployment-config-name CodeDeployDefault.ECSCanary10Percent5Minutes \
-            --github-location repository=${{ github.repository }},commitId=${{ github.sha }}
