@@ -5,7 +5,7 @@
       "TargetService": {
         "Type": "AWS::ECS::Service",
         "Properties": {
-          "TaskDefinition": ${{ steps.register_task.outputs.task_arn }},
+          "TaskDefinition": "TASK_DEF_ARN",
           "LoadBalancerInfo": {
             "ContainerName": "strapi-container",
             "ContainerPort": 1337
