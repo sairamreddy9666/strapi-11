@@ -49,7 +49,7 @@ jobs:
       - name: Register ECS Task Definition
         id: register_task
         run: |
-          TASK_ARN=$(aws ecs describe-task-definition --task-definition sairam-ecs-task --query 'taskDefinition.taskDefinitionArn' --output text)
+          TASK_ARN=$(aws ecs describe-task-definition --task-definition strapi-task --query 'taskDefinition.taskDefinitionArn' --output text)
           echo "TASK_ARN=$TASK_ARN" >> $GITHUB_ENV
 
       - name: Generate AppSpec JSON
