@@ -60,8 +60,9 @@ jobs:
 
       - name: Create CodeDeploy Deployment
         run: |
+          CONTENT=$(jq -c . appspec.json | sed 's/"/\\"/g')
           aws deploy create-deployment \
-            --application-name Strapi-ECS-App \
-            --deployment-group-name Strapi-ECS-DG \
-            --deployment-config-name CodeDeployDefault.ECSCanary10Percent5Minutes \
-            --revision "{\"revisionType\":\"AppSpecContent\",\"appSpecContent\":{\"content\":\"$(jq -c . appspec.json)\"}}"
+          --application-name Strapi-ECS-App \
+          --deployment-group-name Strapi-ECS-DG \
+          --deployment-config-name CodeDeployDefault.ECSCanary10Percent5Minutes \
+          --revision "{\"revisionType\":\"AppSpecContent\",\"appSpecContent\":{\"content\":\"$CONTENT\"}}"
