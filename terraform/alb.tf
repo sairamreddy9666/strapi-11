@@ -22,7 +22,7 @@ resource "aws_alb_listener" "Listener" {
 }
 
 resource "aws_alb_listener" "Green_Listener" {
-  load_balancer_arn = aws_lb.Strapi_ALB.arn
+  load_balancer_arn = aws_lb.LB.id
   port              = 8080
   protocol          = "HTTP"
 
