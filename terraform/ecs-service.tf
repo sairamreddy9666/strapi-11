@@ -8,6 +8,7 @@ resource "aws_ecs_service" "ECS-Service" {
   desired_count                      = 1
   deployment_minimum_healthy_percent = 100
   deployment_maximum_percent         = 200
+  force_new_deployment               = true
   depends_on                         = [aws_alb_listener.Listener]
 
   deployment_controller {
