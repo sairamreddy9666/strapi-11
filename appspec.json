@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "Resources": [
+    {
+      "TargetService": {
+        "Type": "AWS::ECS::Service",
+        "Properties": {
+          "TaskDefinition": ${{ steps.register_task.outputs.task_arn }},
+          "LoadBalancerInfo": {
+            "ContainerName": "strapi-container",
+            "ContainerPort": 1337
+          }
+        }
+      }
+    }
+  ]
+}
