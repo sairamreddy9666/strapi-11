@@ -24,6 +24,4 @@ resource "aws_ecs_service" "ECS-Service" {
   lifecycle {
     ignore_changes = [task_definition, platform_version]
   }
-
-  depends_on = [aws_alb_listener.Listener]
 }
