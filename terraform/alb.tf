@@ -20,3 +20,14 @@ resource "aws_alb_listener" "Listener" {
     type             = "forward"
   }
 }
+
+resource "aws_alb_listener" "Green_Listener" {
+  load_balancer_arn = aws_lb.Strapi_ALB.arn
+  port              = 8080
+  protocol          = "HTTP"
+
+  default_action {
+    type             = "forward"
+    target_group_arn = aws_lb_target_group.Green_TG.arn
+  }
+}
