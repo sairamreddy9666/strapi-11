@@ -9,7 +9,7 @@ resource "aws_ecs_task_definition" "TD" {
   container_definitions = jsonencode([
     {
       name      = "strapi-container"
-      image     = "${var.ecr_repository_url}:${var.image_tag}"
+      image     = "242201300764.dkr.ecr.ap-south-1.amazonaws.com/sairam-strapi-ecr"
       cpu       = 1024
       memory    = 2048
       essential = true
