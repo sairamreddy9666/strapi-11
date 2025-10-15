@@ -46,36 +46,22 @@ jobs:
         working-directory: ./terraform
         run: terraform apply -auto-approve tfplan
 
-      # ✅ Register new ECS Task Definition
       - name: Register ECS Task Definition
         id: register_task
         run: |
-          TASK_ARN=$(aws ecs register-task-definition \
-            --family sairam-ecs-task \
-            --execution-role-arn arn:aws:iam::242201300764:role/ecsTaskExecutionRole \
-            --network-mode awsvpc \
-            --requires-compatibilities FARGATE \
-            --cpu "512" \
-            --memory "1024" \
-            --container-definitions '[{
-              "name": "strapi-container",
-              "image": "${{ secrets.ECR_REPOSITORY }}",
-              "portMappings": [{"containerPort": 1337, "protocol": "tcp"}]
-            }]' \
-            --query 'taskDefinition.taskDefinitionArn' --output text)
+          TASK_ARN=$(aws ecs describe-task-definition --task-definition sairam-ecs-task --query 'taskDefinition.taskDefinitionArn' --output text)
           echo "TASK_ARN=$TASK_ARN" >> $GITHUB_ENV
 
-      # ✅ Prepare AppSpec File
-      - name: Generate appspec.json
+      - name: Generate AppSpec JSON
         run: |
           sed "s|TASK_DEF_ARN|$TASK_ARN|g" appspec-template.json > appspec.json
+          echo "✅ Generated appspec.json:"
           cat appspec.json
 
-      # ✅ Trigger Blue/Green Deployment
       - name: Create CodeDeploy Deployment
         run: |
           aws deploy create-deployment \
             --application-name Strapi-ECS-App \
             --deployment-group-name Strapi-ECS-DG \
             --deployment-config-name CodeDeployDefault.ECSCanary10Percent5Minutes \
-            --revision file://appspec.json
+            --revision "{\"revisionType\":\"AppSpecContent\",\"appSpecContent\":{\"content\":\"$(jq -c . appspec.json)\"}}"
