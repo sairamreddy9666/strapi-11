@@ -14,6 +14,11 @@ resource "aws_ecs_service" "ECS-Service" {
     type = "CODE_DEPLOY"
   }
 
+  load_balancer {
+    target_group_arn = aws_lb_target_group.Blue_TG.arn
+    container_name   = "strapi-container"
+    container_port   = 1337
+  }
 
   network_configuration {
     assign_public_ip = true
