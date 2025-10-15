@@ -24,12 +24,12 @@ resource "aws_codedeploy_deployment_group" "ECS_DG" {
     target_group_pair_info {
 
       # Blue Target Group
-      prod_target_group {
+      target_group {
         name = aws_lb_target_group.Blue_TG.name
       }
 
       # Green Target Group
-      test_target_group {
+      target_group {
         name = aws_lb_target_group.Green_TG.name
       }
 
