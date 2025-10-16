@@ -61,13 +61,14 @@ jobs:
       - name: Register new ECS Task Definition
         id: register_task
         run: |
-          NEW_IMAGE="${{ github.event.workflow_run.outputs.IMAGE_URI }}"
-          
-          # Get existing task definition JSON
+          NEW_IMAGE="242201300764.dkr.ecr.ap-south-1.amazonaws.com/sairam-strapi-ecr:${GITHUB_SHA}"
+
+          # Get existing task definition JSON and extract inner object
           TASK_DEF_JSON=$(aws ecs describe-task-definition --task-definition strapi-task)
+          TASK_DEF=$(echo $TASK_DEF_JSON | jq '.taskDefinition')
 
           # Update container image
-          UPDATED_TASK_DEF=$(echo $TASK_DEF_JSON | jq --arg IMAGE "$NEW_IMAGE" '.taskDefinition.containerDefinitions[0].image=$IMAGE')
+          UPDATED_TASK_DEF=$(echo $TASK_DEF | jq --arg IMAGE "$NEW_IMAGE" '.containerDefinitions[0].image=$IMAGE')
 
           # Remove unnecessary fields
           UPDATED_TASK_DEF_CLEAN=$(echo $UPDATED_TASK_DEF | jq 'del(.taskDefinitionArn, .revision, .status, .requiresAttributes, .compatibilities, .registeredAt, .registeredBy)')
@@ -76,6 +77,7 @@ jobs:
           NEW_TASK_DEF_ARN=$(aws ecs register-task-definition --cli-input-json "$UPDATED_TASK_DEF_CLEAN" --query 'taskDefinition.taskDefinitionArn' --output text)
 
           echo "TASK_ARN=$NEW_TASK_DEF_ARN" >> $GITHUB_ENV
+
 
       # 9️⃣ Generate AppSpec JSON for CodeDeploy
       - name: Generate AppSpec JSON
