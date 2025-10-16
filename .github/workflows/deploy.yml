@@ -2,6 +2,10 @@ name: Deploy Strapi on ECS Fargate via Terraform
 
 on:
   workflow_dispatch:
+  workflow_run:
+    workflows: ["Build & Push Docker Image"]
+    types:
+      - completed
 
 jobs:
   deploy:
@@ -12,9 +16,11 @@ jobs:
       DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
 
     steps:
+      # 1️⃣ Checkout repository
       - name: Checkout code
         uses: actions/checkout@v4
 
+      # 2️⃣ Configure AWS credentials
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v3
         with:
@@ -22,47 +28,79 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.AWS_REGION }}
 
+      # 3️⃣ Setup Terraform
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
         with:
           terraform_version: 1.6.0
 
+      # 4️⃣ Terraform Init
       - name: Terraform Init
         working-directory: ./terraform
         run: terraform init -input=false
 
+      # 5️⃣ Terraform Validate
       - name: Terraform Validate
         working-directory: ./terraform
         run: terraform validate
 
+      # 6️⃣ Terraform Plan
       - name: Terraform Plan
         working-directory: ./terraform
         run: |
           terraform plan -out=tfplan -input=false \
-            -var "image_uri=${{ secrets.ECR_REPOSITORY }}" \
+            -var "image_uri=${{ github.event.workflow_run.outputs.IMAGE_URI }}" \
             -var "db_password=${{ secrets.POSTGRES_PASSWORD }}"
 
+      # 7️⃣ Terraform Apply
       - name: Terraform Apply
         working-directory: ./terraform
         run: terraform apply -auto-approve tfplan
 
-      - name: Register ECS Task Definition
+      # 8️⃣ Register new ECS Task Definition revision
+      - name: Register new ECS Task Definition
         id: register_task
         run: |
-          TASK_ARN=$(aws ecs describe-task-definition --task-definition strapi-task --query 'taskDefinition.taskDefinitionArn' --output text)
-          echo "TASK_ARN=$TASK_ARN" >> $GITHUB_ENV
+          NEW_IMAGE="${{ github.event.workflow_run.outputs.IMAGE_URI }}"
+          
+          # Get existing task definition JSON
+          TASK_DEF_JSON=$(aws ecs describe-task-definition --task-definition strapi-task)
 
+          # Update container image
+          UPDATED_TASK_DEF=$(echo $TASK_DEF_JSON | jq --arg IMAGE "$NEW_IMAGE" '.taskDefinition.containerDefinitions[0].image=$IMAGE')
+
+          # Remove unnecessary fields
+          UPDATED_TASK_DEF_CLEAN=$(echo $UPDATED_TASK_DEF | jq 'del(.taskDefinitionArn, .revision, .status, .requiresAttributes, .compatibilities, .registeredAt, .registeredBy)')
+
+          # Register new task definition
+          NEW_TASK_DEF_ARN=$(aws ecs register-task-definition --cli-input-json "$UPDATED_TASK_DEF_CLEAN" --query 'taskDefinition.taskDefinitionArn' --output text)
+
+          echo "TASK_ARN=$NEW_TASK_DEF_ARN" >> $GITHUB_ENV
+
+      # 9️⃣ Generate AppSpec JSON for CodeDeploy
       - name: Generate AppSpec JSON
         run: |
           sed "s|TASK_DEF_ARN|$TASK_ARN|g" appspec-template.json > appspec.json
           echo "✅ Generated appspec.json:"
           cat appspec.json
 
+      # 🔟 Create CodeDeploy Deployment
       - name: Create CodeDeploy Deployment
+        id: create_deployment
         run: |
           CONTENT=$(jq -c . appspec.json | sed 's/"/\\"/g')
-          aws deploy create-deployment \
-          --application-name Strapi-ECS-App \
-          --deployment-group-name Strapi-ECS-DG \
-          --deployment-config-name CodeDeployDefault.ECSCanary10Percent5Minutes \
-          --revision "{\"revisionType\":\"AppSpecContent\",\"appSpecContent\":{\"content\":\"$CONTENT\"}}"
+          DEPLOYMENT_ID=$(aws deploy create-deployment \
+            --application-name Strapi-ECS-App \
+            --deployment-group-name Strapi-ECS-DG \
+            --deployment-config-name CodeDeployDefault.ECSCanary10Percent5Minutes \
+            --revision "{\"revisionType\":\"AppSpecContent\",\"appSpecContent\":{\"content\":\"$CONTENT\"}}" \
+            --query 'deploymentId' --output text)
+          echo "DEPLOYMENT_ID=$DEPLOYMENT_ID" >> $GITHUB_ENV
+          echo "✅ Deployment triggered with ID: $DEPLOYMENT_ID"
+
+      # 1️⃣1️⃣ Wait for deployment to succeed
+      - name: Wait for Deployment Completion
+        run: |
+          echo "Waiting for deployment $DEPLOYMENT_ID to complete..."
+          aws deploy wait deployment-successful --deployment-id $DEPLOYMENT_ID
+          echo "✅ Deployment succeeded!"
