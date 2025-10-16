@@ -76,4 +76,5 @@ jobs:
       run: echo "✅ Image pushed successfully and old images cleaned up!"
 
     - name: Set output IMAGE_URI
-      run: echo "IMAGE_URI=242201300764.dkr.ecr.ap-south-1.amazonaws.com/sairam-strapi-ecr:${GITHUB_SHA}" >> $GITHUB_ENV
+      id: set_image_uri
+      run: echo "IMAGE_URI=242201300764.dkr.ecr.ap-south-1.amazonaws.com/sairam-strapi-ecr:${GITHUB_SHA}" >> $GITHUB_OUTPUT
