@@ -103,6 +103,23 @@ jobs:
       # 1️⃣1️⃣ Wait for deployment to succeed
       - name: Wait for Deployment Completion
         run: |
-          echo "Waiting for deployment $DEPLOYMENT_ID to complete..."
-          aws deploy wait deployment-successful --deployment-id $DEPLOYMENT_ID
-          echo "✅ Deployment succeeded!"
+          echo "Monitoring deployment $DEPLOYMENT_ID..."
+          while true; do
+            STATUS=$(aws deploy get-deployment --deployment-id $DEPLOYMENT_ID --query 'deploymentInfo.status' --output text)
+            echo "Current status: $STATUS"
+            if [[ "$STATUS" == "Succeeded" ]]; then
+              echo "✅ Deployment succeeded!"
+              break
+            elif [[ "$STATUS" == "Failed" || "$STATUS" == "Stopped" ]]; then
+              echo "❌ Deployment failed. Initiating rollback..."
+              aws deploy stop-deployment --deployment-id $DEPLOYMENT_ID --auto-rollback-enabled
+              exit 1
+            else
+              echo "Deployment in progress... waiting 15 seconds."
+              sleep 15
+            fi
+          done
+        env:
+          AWS_REGION: ${{ secrets.AWS_REGION }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
