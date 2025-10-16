@@ -1,14 +1,18 @@
-# 🚀 Strapi Blue/Green Deployment on AWS ECS Fargate
+# 🚀 Strapi Blue/Green Deployment on AWS ECS Fargate — Task #11
 
-This project automates the **Blue/Green deployment** of a Strapi application using **AWS ECS Fargate**, **Terraform**, **GitHub Actions**, and **AWS CodeDeploy**.  
-It demonstrates a modern, fully automated CI/CD pipeline with zero downtime deployment.
+This task extends **Task #10** by adding a **fully automated GitHub Actions CI/CD pipeline** that:
+- Pushes pre-built Docker images to ECR,
+- Dynamically updates ECS Task Definitions,
+- Triggers **AWS CodeDeploy** for Blue/Green deployment,
+- Optionally monitors deployment status and rollbacks automatically on failure.
 
 ---
 
 ## 🧩 Architecture Overview
+
 ```bash
  ┌────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
- │                                              GitHub Repository (strapi-10)                                                 │
+ │                                              GitHub Repository (strapi-11)                                                 │
  │  - Source Code (Strapi App, Dockerfile, Terraform)                                                                         │
  │  - GitHub Actions Workflows (build-push.yml, deploy.yml, destroy.yml)                                                      │
  └────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
@@ -18,65 +22,85 @@ It demonstrates a modern, fully automated CI/CD pipeline with zero downtime depl
  │   GitHub Actions (CI/CD)  │ ───────────────────▶   │ AWS Elastic Container Reg. │
  │   • Build Docker Image    │                      │ (ECR)                       │
  │   • Push Image to ECR     │                      │ Stores Versioned Images     │
- └───────────────────────────┘                      └────────────────────────────┘
-                                                      │
-                                                      ▼
- ┌───────────────────────────┐     Provision Infra    ┌────────────────────────────┐
- │  Terraform (IaC)          │ ───────────────────▶   │ AWS Infrastructure         │
- │  • ECS Cluster (Fargate)  │                      │ • ALB (with Blue/Green TGs) │
- │  • IAM Roles, SGs, etc.   │                      │ • CloudWatch Logs           │
- │  • CodeDeploy Setup       │                      │ • ECS Services              │
- └───────────────────────────┘                      └────────────────────────────┘
+ │   • Trigger Deployment    │                      └────────────────────────────┘
+ │   • Monitor Rollback      │
+ └───────────────────────────┘
                                                       │
                                                       ▼
  ┌───────────────────────────┐     Deploy via         ┌────────────────────────────┐
  │ AWS CodeDeploy (ECS Type) │ ───────────────────▶   │ ECS Service (Fargate)      │
  │ • Blue/Green Deployment   │                      │ Blue = Old Task Set         │
- │ • Canary Strategy (10%)   │                      │ Green = New Task Set        │
- │ • Auto Rollback on Fail   │                      │ Dynamic Traffic Switch      │
+ │ • Canary 10%/5min rollout │                      │ Green = New Task Set        │
+ │ • Auto Rollback on Fail   │                      │ Managed via ALB Listener    │
  └───────────────────────────┘                      └────────────────────────────┘
-                                                      │
-                                                      ▼
- ┌───────────────────────────┐     Routes Requests    ┌────────────────────────────┐
- │ Application Load Balancer │ ───────────────────▶   │ Strapi App (Port 1337)     │
- │ (Listeners: 80 / 443)     │                      │ Responds to Client Traffic  │
- │ • Health Checks           │                      │ Using Green Target Group    │
- └───────────────────────────┘                      └────────────────────────────┘
-                                                      │
-                                                      ▼
- ┌────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
- │                                            AWS CloudWatch (Monitoring)                                                      │
- │  • Collects ECS Metrics                                                                                                    │
- │  • Logs from Strapi Containers                                                                                             │
- │  • Used for Alarms and Troubleshooting                                                                                      │
- └────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+
 ```
+---
 
-## 🏗️ Architecture Overview
+## 🏗️ Key Additions in Task #11
 
-- **ECS Cluster** running **Fargate tasks** for Strapi.
-- **Application Load Balancer (ALB)** configured with:
-  - Two **Target Groups**: Blue (active) and Green (staging).
-  - **Listeners** on ports 80 and 443 for traffic routing.
-- **RDS** for Strapi database (PostgreSQL).
-- **CodeDeploy** for managing ECS Blue/Green deployments.
-- **CloudWatch** for logs and monitoring.
-- **GitHub Actions** CI/CD pipeline for automatic deployments.
+| Feature                                | Description                                                   |
+| -------------------------------------- | ------------------------------------------------------------- |
+| **GitHub Actions CI/CD**               | Automates the full deployment pipeline.                       |
+| **ECR Image Tagging**                  | Uses the GitHub Commit SHA as the image tag.                  |
+| **Dynamic ECS Task Definition Update** | Automatically replaces container image URI during deployment. |
+| **CodeDeploy Integration**             | Triggers ECS Blue/Green deployment automatically.             |
+| **Deployment Monitoring**              | Waits for CodeDeploy to confirm success or rollback.          |
+
 
 ---
 
-## ⚙️ Technologies Used
+## ⚙️ Workflow Logic (GitHub Actions)
 
-| Component | Service |
-|------------|----------|
-| Application | [Strapi](https://strapi.io/) |
-| Container | Docker |
-| Orchestration | Amazon ECS (Fargate) |
-| CI/CD | GitHub Actions + AWS CodeDeploy |
-| IaC | Terraform |
-| Database | Amazon RDS (PostgreSQL) |
-| Monitoring | Amazon CloudWatch |
-| Storage | Amazon S3 (for AppSpec & CodeDeploy) |
+## 1️⃣ Build & Push Stage
+
+- From Task #10 (build-push.yml)
+
+- Builds and pushes the Docker image to ECR, tagged with GITHUB_SHA
+
+## 2️⃣ Deploy Stage (Task #11 focus)
+
+- Handled via deploy.yml workflow.
+## Key Steps:
+1. **Configure AWS Credentials**
+2. **Terraform Apply**
+  - Ensures ECS, ALB, and CodeDeploy are ready.
+3. **Update ECS Task Definition**
+  - Dynamically replaces image URI with new commit tag.
+4. **Register New Task Revision**
+  - Registers a new revision in ECS automatically.
+5. **Trigger CodeDeploy**
+  - Creates a Blue/Green deployment using the latest task definition.
+6. **Monitor Deployment**
+  - Waits until deployment is marked successful.
+
+
+---
+
+## 🧠 Optional Rollback Logic
+
+If the deployment fails:
+
+- **CodeDeploy** automatically reverts ALB traffic to the previous (Blue) target group.
+
+- **GitHub Actions** logs will show:
+```bash
+Waiter DeploymentSuccessful failed: Waiter encountered a terminal failure state
+```
+- Rollback details available under **AWS CodeDeploy → Deployments → Events**
+
+---
+
+## 🧾 GitHub Secrets Required
+
+| Secret Name             | Description              |
+| ----------------------- | ------------------------ |
+| `AWS_ACCESS_KEY_ID`     | IAM User Key             |
+| `AWS_SECRET_ACCESS_KEY` | IAM User Secret          |
+| `AWS_REGION`            | Region (e.g. ap-south-1) |
+| `DB_PASSWORD`           | Database password        |
+| `POSTGRES_PASSWORD`     | Optional DB secret       |
+
 
 ---
 
@@ -187,16 +211,17 @@ GitHub Actions will automatically:
 
 - Deployment Strategy: `CodeDeployDefault.ECSCanary10Percent5Minutes`
 
-<img width="912" height="349" alt="Screenshot 2025-10-16 082921" src="https://github.com/user-attachments/assets/7583e38f-ef72-4546-a8d3-09664d35e6d8" />
-
+<img width="910" height="341" alt="Screenshot 2025-10-16 140140" src="https://github.com/user-attachments/assets/a6432dce-e1ba-419d-a5e5-c99c67cd17a5" />
 
 - Run test traffic route setup
 - Reroute production traffic to Green
-<img width="904" height="345" alt="Screenshot 2025-10-16 083151" src="https://github.com/user-attachments/assets/6fe966c0-04cc-4542-917c-c7c923a6ba62" />
+
+<img width="908" height="340" alt="Screenshot 2025-10-16 140808" src="https://github.com/user-attachments/assets/41a6a066-cadd-4a3e-b12e-d9b62fc02946" />
 
 - Auto rollback on failure enabled
 - Wait 5 minutes
-<img width="905" height="350" alt="Screenshot 2025-10-16 084148" src="https://github.com/user-attachments/assets/8f7f1a25-295d-42be-be42-f894dd848598" />
+
+<img width="916" height="344" alt="Screenshot 2025-10-16 141347" src="https://github.com/user-attachments/assets/d74a59c3-9794-44da-a9de-4dab735450c5" />
 
 - Automatically terminates old tasks post successful deployment
 
@@ -213,7 +238,8 @@ GitHub Actions will automatically:
 ---
 
 ## 🎯 Final ECS Deployment Success
-<img width="960" height="450" alt="Screenshot 2025-10-16 084352" src="https://github.com/user-attachments/assets/7e5d4667-a1b2-4eff-8126-5e954f266fda" />
+
+<img width="960" height="453" alt="Screenshot 2025-10-16 141528" src="https://github.com/user-attachments/assets/8b2a5ae8-a513-47e1-8f3b-b4f19de2e1a4" />
 
 ---
 
