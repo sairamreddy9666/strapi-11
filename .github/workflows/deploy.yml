@@ -61,7 +61,7 @@ jobs:
       - name: Register new ECS Task Definition
         id: register_task
         run: |
-          NEW_IMAGE="242201300764.dkr.ecr.ap-south-1.amazonaws.com/sairam-strapi-ecr:${GITHUB_SHA}"
+          NEW_IMAGE="242201300764.dkr.ecr.ap-south-1.amazonaws.com/sairam-strapi-ecr:latest"
 
           # Get existing task definition JSON and extract inner object
           TASK_DEF_JSON=$(aws ecs describe-task-definition --task-definition strapi-task)
