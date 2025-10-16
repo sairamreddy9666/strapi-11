@@ -8,7 +8,7 @@ resource "aws_codedeploy_deployment_group" "ECS_DG" {
   deployment_group_name = "Strapi-ECS-DG"
   service_role_arn      = aws_iam_role.CodeDeployRole.arn
 
-  deployment_config_name = "CodeDeployDefault.ECSAllAtOnce"
+  deployment_config_name = "CodeDeployDefault.ECSCanary10Percent5Minutes"
 
   ecs_service {
     cluster_name = aws_ecs_cluster.ECS.name
