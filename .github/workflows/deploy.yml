@@ -115,8 +115,8 @@ jobs:
               aws deploy stop-deployment --deployment-id $DEPLOYMENT_ID --auto-rollback-enabled
               exit 1
             else
-              echo "Deployment in progress... waiting 15 seconds."
-              sleep 15
+              echo "Deployment in progress... waiting 60 seconds."
+              sleep 60
             fi
           done
         env:
